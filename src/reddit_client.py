@@ -1,51 +1,48 @@
 import praw
-from configparser import ConfigParser
-import logging
+import requests
+import configparser
+import os
 
+# Initialize the config parser
+config = configparser.ConfigParser()
+config.read('../config/config.ini')
 
-# Function to create a Reddit client using credentials from config.ini
-def get_reddit_client():
-    """Creates and returns a Reddit API client using credentials from config/config.ini"""
+client_id = config['REDDIT']['client_id']
+client_secret = config['REDDIT']['client_secret']
+user_agent = config['REDDIT']['user_agent']
 
-    # Load credentials from config.ini
-    config = ConfigParser()
-    config.read('config/config.ini')
+reddit = praw.Reddit(client_id=client_id,
+                     client_secret=client_secret,
+                     user_agent=user_agent)
 
-    try:
-        # Create and return the Reddit client
-        reddit = praw.Reddit(
-            client_id=config['REDDIT']['client_id'],
-            client_secret=config['REDDIT']['client_secret'],
-            user_agent=config['REDDIT']['user_agent']
-        )
-        logging.info("Successfully authenticated with Reddit API.")
-        return reddit
-
-    except Exception as e:
-        logging.error(f"Error while creating Reddit client: {str(e)}")
-        raise
-
-
-# Function to get the top post from a specified subreddit
 def get_top_post(subreddit_name):
-    """Fetches the top post from the specified subreddit of the day and returns the title and URL."""
+    subreddit = reddit.subreddit(subreddit_name)
+    top_posts = list(subreddit.top(limit=1))
 
+    if not top_posts:
+        return None  # Handle the case where there are no posts
+
+    top_post = top_posts[0]  # Get the first (and only) post from the list
+    return {
+        'title': top_post.title,
+        'url': top_post.url,
+        'score': top_post.score,
+        'image_url': top_post.url  # Add the image URL (or any other relevant field)
+    }
+
+def download_image(image_url, save_path):
     try:
-        # Initialize the Reddit client
-        reddit = get_reddit_client()
-
-        # Access the subreddit
-        subreddit = reddit.subreddit(subreddit_name)
-
-        # Fetch the top post of the day
-        top_post = next(subreddit.top('day', limit=1))  # Get the top post for the day
-
-        # Log the successful fetch
-        logging.info(f"Fetched top post from r/{subreddit_name}: {top_post.title}")
-
-        # Return the title and URL of the post
-        return top_post.title, top_post.url
-
+        response = requests.get(image_url)
+        if response.status_code == 200:
+            image_filename = os.path.basename(image_url)  # Get the image filename from the URL
+            image_path = os.path.join(save_path, image_filename)  # Construct the full file path
+            with open(image_path, 'wb') as f:
+                f.write(response.content)
+            print(f"Image downloaded and saved to: {image_path}")  # Confirm saving
+            return image_path
+        else:
+            print(f"Error downloading image: {response.status_code}")  # Log the status code
+            return None
     except Exception as e:
-        logging.error(f"Error fetching top post from r/{subreddit_name}: {str(e)}")
-        raise
+        print(f"Exception occurred while downloading the image: {e}")
+        return None
