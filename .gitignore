@@ -1,0 +1,41 @@
+# Sensitive config files containing API keys
+config/config.ini
+
+# Virtual environment directory (Python)
+venv/
+ENV/
+env/
+
+# Byte-compiled / optimized / DLL files
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Cache and log files
+__pycache__/
+*.log
+logs/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor and IDE specific files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# PyCharm
+*.iml
+*.ipr
+*.iws
+
+# Jupyter Notebooks checkpoints (if using)
+.ipynb_checkpoints/
+
+# Miscellaneous
+*.swp
